@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <iosfwd>
 
 using u1 = uint8_t;
 using u2 = uint16_t;
@@ -8,21 +9,21 @@ using u4 = uint32_t;
 using u8 = uint64_t;
 
 template<typename T>
-class list {
+class List {
 public:
-	list();
-	explicit list(u2 size);
-	list(const list<T>& other);
-	list(list<T>&& other) noexcept;
-	~list();
+	List();
+	explicit List(u2 size);
+	List(const List<T>& other);
+	List(List<T>&& other) noexcept;
+	~List();
 
-	list<T>& operator=(list<T>&& other) noexcept;
+	List<T>& operator=(List<T>&& other) noexcept;
 
 	T& operator[](u2 i);
 	const T& operator[](u2 i) const;
 	
-	u2 getSize() const { return size; };
+	u2 getSize() const { return m_size; };
 private:
-	u2 size;
-	T* data;
+	u2 m_size;
+	T* m_data;
 };

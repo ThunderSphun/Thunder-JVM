@@ -2,12 +2,162 @@
 #include "types.h"
 
 #include <iostream>
+#include <type_traits>
 
 template<typename T>
 T readBigEndian(std::ifstream& stream) {
 	T t{};
 	stream.read(reinterpret_cast<char*>(&t), sizeof(t));
 	return std::byteswap(t);
+}
+
+template<>
+u1 readBigEndian(std::ifstream& stream) {
+	u1 val;
+	stream.read(reinterpret_cast<char*>(&val), 1);
+	return val;
+}
+
+template<>
+tjvm::ConstantPool::Tag readBigEndian(std::ifstream& stream) {
+	return tjvm::ConstantPool::Tag(readBigEndian<u1>(stream));
+}
+
+template<>
+tjvm::ConstantPool::ClassInfo readBigEndian(std::ifstream& stream) {
+	tjvm::ConstantPool::ClassInfo info{};
+
+	info.name_index = readBigEndian<u2>(stream);
+
+	return info;
+}
+
+template<>
+tjvm::ConstantPool::FieldrefInfo readBigEndian(std::ifstream& stream) {
+	tjvm::ConstantPool::FieldrefInfo info{};
+
+	info.class_index = readBigEndian<u2>(stream);
+	info.name_and_type_index = readBigEndian<u2>(stream);
+
+	return info;
+}
+
+template<>
+tjvm::ConstantPool::MethodrefInfo readBigEndian(std::ifstream& stream) {
+	tjvm::ConstantPool::MethodrefInfo info{};
+
+	info.class_index = readBigEndian<u2>(stream);
+	info.name_and_type_index = readBigEndian<u2>(stream);
+
+	return info;
+}
+
+template<>
+tjvm::ConstantPool::InterfaceMethodrefInfo readBigEndian(std::ifstream& stream) {
+	tjvm::ConstantPool::InterfaceMethodrefInfo info{};
+
+	info.class_index = readBigEndian<u2>(stream);
+	info.name_and_type_index = readBigEndian<u2>(stream);
+
+	return info;
+}
+
+template<>
+tjvm::ConstantPool::StringInfo readBigEndian(std::ifstream& stream) {
+	tjvm::ConstantPool::StringInfo info{};
+
+	info.string_index = readBigEndian<u2>(stream);
+
+	return info;
+}
+
+template<>
+tjvm::ConstantPool::IntegerInfo readBigEndian(std::ifstream& stream) {
+	tjvm::ConstantPool::IntegerInfo info{};
+
+	info.bytes = readBigEndian<u4>(stream);
+
+	return info;
+}
+
+template<>
+tjvm::ConstantPool::FloatInfo readBigEndian(std::ifstream& stream) {
+	tjvm::ConstantPool::FloatInfo info{};
+
+	info.bytes = readBigEndian<u4>(stream);
+
+	return info;
+}
+
+template<>
+tjvm::ConstantPool::LongInfo readBigEndian(std::ifstream& stream) {
+	tjvm::ConstantPool::LongInfo info{};
+
+	info.high_bytes = readBigEndian<u4>(stream);
+	info.low_bytes = readBigEndian<u4>(stream);
+
+	return info;
+}
+
+template<>
+tjvm::ConstantPool::DoubleInfo readBigEndian(std::ifstream& stream) {
+	tjvm::ConstantPool::DoubleInfo info{};
+
+	info.high_bytes = readBigEndian<u4>(stream);
+	info.low_bytes = readBigEndian<u4>(stream);
+
+	return info;
+}
+
+template<>
+tjvm::ConstantPool::NameAndTypeInfo readBigEndian(std::ifstream& stream) {
+	tjvm::ConstantPool::NameAndTypeInfo info{};
+
+	info.name_index = readBigEndian<u2>(stream);
+	info.descriptor_index = readBigEndian<u2>(stream);
+
+	return info;
+}
+
+template<>
+tjvm::ConstantPool::Utf8Info readBigEndian(std::ifstream& stream) {
+	tjvm::ConstantPool::Utf8Info info{};
+
+	info.bytes = new List<u1>(readBigEndian<u2>(stream));
+
+	for (u2 j = 0; j < info.bytes->getSize(); j++)
+		(*info.bytes)[j] = readBigEndian<u1>(stream);
+
+	return info;
+}
+
+template<>
+tjvm::ConstantPool::MethodHandleInfo readBigEndian(std::ifstream& stream) {
+	tjvm::ConstantPool::MethodHandleInfo info{};
+
+	info.reference_kind = readBigEndian<u1>(stream);
+	info.reference_index = readBigEndian<u2>(stream);
+
+	return info;
+}
+
+template<>
+tjvm::ConstantPool::MethodTypeInfo readBigEndian(std::ifstream& stream) {
+	tjvm::ConstantPool::MethodTypeInfo info{};
+
+	info.descriptor_index = readBigEndian<u2>(stream);
+
+	return info;
+}
+
+template<>
+tjvm::ConstantPool::InvokeDynamicInfo readBigEndian(std::ifstream& stream) {
+	tjvm::ConstantPool::InvokeDynamicInfo info{};
+
+	info.bootstrap_method_attr_index = readBigEndian<u2>(stream);
+	info.name_and_type_index = readBigEndian<u2>(stream);
+
+	return info;
 }
 
 std::optional<tjvm::Class> tjvm::parseClass(std::ifstream& file) {
@@ -20,140 +170,36 @@ std::optional<tjvm::Class> tjvm::parseClass(std::ifstream& file) {
 	if (magic != 0xCAFEBABE)
 		return {};
 
-	java.minor_version = readBigEndian<u2>(file);
-	java.major_version = readBigEndian<u2>(file);
+	java.m_minor_version = readBigEndian<u2>(file);
+	java.m_major_version = readBigEndian<u2>(file);
 
-	java.constantPool = parseConstantPool(file, readBigEndian<u2>(file));
+	java.m_constantPool = parseConstantPool(file, readBigEndian<u2>(file));
 
 	return std::move(std::make_optional(std::move(java)));
 }
 
-list<tjvm::cpInfo> tjvm::parseConstantPool(std::ifstream& file, u2 amount) {
-	list<tjvm::cpInfo> result(amount);
+List<tjvm::ConstantPool> tjvm::parseConstantPool(std::ifstream& file, u2 amount) {
+	List<tjvm::ConstantPool> result(amount);
 
 	for (u2 i = 0; i < amount; i++) {
-		tjvm::cpInfo& ref = result[i];
-		ref.tag = readBigEndian<u1>(file);
+		tjvm::ConstantPool& ref = result[i];
+		ref.m_tag = readBigEndian<tjvm::ConstantPool::Tag>(file);
 
-		switch (ref.tag) {
-		case 7: { // constant_class
-			ref.info = list<u1>(2);
-			ref.info[0] = readBigEndian<u1>(file);
-			ref.info[1] = readBigEndian<u1>(file);
-			break;
-		}
-		case 9: { // constant_fieldRef
-			ref.info = list<u1>(4);
-			ref.info[0] = readBigEndian<u1>(file);
-			ref.info[1] = readBigEndian<u1>(file);
-			ref.info[2] = readBigEndian<u1>(file);
-			ref.info[3] = readBigEndian<u1>(file);
-			break;
-		}
-		case 10: { // constant_methodRef
-			ref.info = list<u1>(4);
-			ref.info[0] = readBigEndian<u1>(file);
-			ref.info[1] = readBigEndian<u1>(file);
-			ref.info[2] = readBigEndian<u1>(file);
-			ref.info[3] = readBigEndian<u1>(file);
-			break;
-		}
-		case 11: { // constant_interfaceMethodRef
-			ref.info = list<u1>(4);
-			ref.info[0] = readBigEndian<u1>(file);
-			ref.info[1] = readBigEndian<u1>(file);
-			ref.info[2] = readBigEndian<u1>(file);
-			ref.info[3] = readBigEndian<u1>(file);
-			break;
-		}
-		case 8: { // constant_string
-			ref.info = list<u1>(2);
-			ref.info[0] = readBigEndian<u1>(file);
-			ref.info[1] = readBigEndian<u1>(file);
-			break;
-		}
-		case 3: { // constant_integer
-			ref.info = list<u1>(4);
-			ref.info[0] = readBigEndian<u1>(file);
-			ref.info[1] = readBigEndian<u1>(file);
-			ref.info[2] = readBigEndian<u1>(file);
-			ref.info[3] = readBigEndian<u1>(file);
-			break;
-		}
-		case 4: { // constant_float
-			ref.info = list<u1>(4);
-			ref.info[0] = readBigEndian<u1>(file);
-			ref.info[1] = readBigEndian<u1>(file);
-			ref.info[2] = readBigEndian<u1>(file);
-			ref.info[3] = readBigEndian<u1>(file);
-			break;
-		}
-		case 5: { // constant_long
-			ref.info = list<u1>(8);
-			ref.info[0] = readBigEndian<u1>(file);
-			ref.info[1] = readBigEndian<u1>(file);
-			ref.info[2] = readBigEndian<u1>(file);
-			ref.info[3] = readBigEndian<u1>(file);
-			ref.info[4] = readBigEndian<u1>(file);
-			ref.info[5] = readBigEndian<u1>(file);
-			ref.info[6] = readBigEndian<u1>(file);
-			ref.info[7] = readBigEndian<u1>(file);
-			break;
-		}
-		case 6: { // constant_double
-			ref.info = list<u1>(8);
-			ref.info[0] = readBigEndian<u1>(file);
-			ref.info[1] = readBigEndian<u1>(file);
-			ref.info[2] = readBigEndian<u1>(file);
-			ref.info[3] = readBigEndian<u1>(file);
-			ref.info[4] = readBigEndian<u1>(file);
-			ref.info[5] = readBigEndian<u1>(file);
-			ref.info[6] = readBigEndian<u1>(file);
-			ref.info[7] = readBigEndian<u1>(file);
-			break;
-		}
-		case 12: { // constant_nameAndType
-			ref.info = list<u1>(4);
-			ref.info[0] = readBigEndian<u1>(file);
-			ref.info[1] = readBigEndian<u1>(file);
-			ref.info[2] = readBigEndian<u1>(file);
-			ref.info[3] = readBigEndian<u1>(file);
-			break;
-		}
-		case 1: { // constant_utf8
-			// TODO: Handle utf8 correctly
-			u2 length = readBigEndian<u2>(file);
-
-			ref.info = list<u1>(length + 2);
-			ref.info[0] = length & 0xFF;
-			ref.info[1] = (length >> 8) & 0xFF;
-
-			for (u2 j = 0; j < length; j++)
-				ref.info[j + 2] = readBigEndian<u1>(file);
-
-			break;
-		}
-		case 15: { // constant_methodHandle
-			ref.info = list<u1>(3);
-			ref.info[0] = readBigEndian<u1>(file);
-			ref.info[1] = readBigEndian<u1>(file);
-			ref.info[2] = readBigEndian<u1>(file);
-			break;
-		}
-		case 16: { // constant_methodType
-			ref.info = list<u1>(2);
-			ref.info[0] = readBigEndian<u1>(file);
-			ref.info[1] = readBigEndian<u1>(file);
-			break;
-		}
-		case 18: { // constant_invokeDynamic
-			ref.info = list<u1>(4);
-			ref.info[0] = readBigEndian<u1>(file);
-			ref.info[1] = readBigEndian<u1>(file);
-			ref.info[1] = readBigEndian<u1>(file);
-			ref.info[1] = readBigEndian<u1>(file);
-			break;
-		}
+		switch (ref.m_tag) {
+		case tjvm::ConstantPool::Tag::Class:				ref.m_class				= readBigEndian<tjvm::ConstantPool::ClassInfo>				(file); break;
+		case tjvm::ConstantPool::Tag::Fieldref:				ref.m_fieldRef			= readBigEndian<tjvm::ConstantPool::FieldrefInfo>			(file); break;
+		case tjvm::ConstantPool::Tag::Methodref:			ref.m_methodRef			= readBigEndian<tjvm::ConstantPool::MethodrefInfo>			(file); break;
+		case tjvm::ConstantPool::Tag::InterfaceMethodref:	ref.m_interfaceMethodRef= readBigEndian<tjvm::ConstantPool::InterfaceMethodrefInfo>	(file); break;
+		case tjvm::ConstantPool::Tag::String:				ref.m_string			= readBigEndian<tjvm::ConstantPool::StringInfo>				(file); break;
+		case tjvm::ConstantPool::Tag::Integer:				ref.m_integer			= readBigEndian<tjvm::ConstantPool::IntegerInfo>			(file); break;
+		case tjvm::ConstantPool::Tag::Float:				ref.m_float				= readBigEndian<tjvm::ConstantPool::FloatInfo>				(file); break;
+		case tjvm::ConstantPool::Tag::Long:					ref.m_long				= readBigEndian<tjvm::ConstantPool::LongInfo>				(file); break;
+		case tjvm::ConstantPool::Tag::Double:				ref.m_double			= readBigEndian<tjvm::ConstantPool::DoubleInfo>				(file); break;
+		case tjvm::ConstantPool::Tag::NameAndType:			ref.m_nameAndType		= readBigEndian<tjvm::ConstantPool::NameAndTypeInfo>		(file); break;
+		case tjvm::ConstantPool::Tag::Utf8:					ref.m_utf8				= readBigEndian<tjvm::ConstantPool::Utf8Info>				(file); break;
+		case tjvm::ConstantPool::Tag::MethodHandle:			ref.m_methodHandle		= readBigEndian<tjvm::ConstantPool::MethodHandleInfo>		(file); break;
+		case tjvm::ConstantPool::Tag::MethodType:			ref.m_methodType		= readBigEndian<tjvm::ConstantPool::MethodTypeInfo>			(file); break;
+		case tjvm::ConstantPool::Tag::InvokeDynamic:		ref.m_invokeDynamic		= readBigEndian<tjvm::ConstantPool::InvokeDynamicInfo>		(file); break;
 		default: {
 			std::cerr << "invalid ref tag, continuing parsing the rest of the file" << std::endl;
 			readBigEndian<u2>(file); // consume 2 bytes as that should be the minimum

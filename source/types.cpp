@@ -3,64 +3,68 @@
 #include <iostream>
 
 template<typename T>
-list<T>::list() : list(0) {
+List<T>::List() : List(0) {
 }
 
 template<typename T>
-list<T>::list(u2 size) : size(size), data(size > 0 ? new T[size] : nullptr) {
+List<T>::List(u2 size) : m_size(size), m_data(m_size > 0 ? new T[m_size] : nullptr) {
 	//std::cout << "creating list<" << typeid(T).name() << "> (" << size << ")" << std::endl;
 }
 
 template<typename T>
-list<T>::list(const list<T>& other): size(other.size), data(other.data) {
+List<T>::List(const List<T>& other): m_size(other.m_size), m_data(other.m_data) {
 	//std::cout << "copying list<" << typeid(T).name() << "> (" << size << ")" << std::endl;
 }
 
 template<typename T>
-list<T>::list(list<T>&& other) noexcept: size(other.size), data(other.data) {
+List<T>::List(List<T>&& other) noexcept: m_size(other.m_size), m_data(other.m_data) {
 	//std::cout << "moving list<" << typeid(T).name() << "> (" << size << ")" << std::endl;
-	other.data = nullptr;
+	other.m_data = nullptr;
 }
 
 template<typename T>
-list<T>::~list() {
-	if (data != nullptr)
+List<T>::~List() {
+	//if (m_data != nullptr)
 		//std::cout << "removing list<" << typeid(T).name() << "> (" << size << ")" << std::endl;
-	delete[] data;
+	delete[] m_data;
 }
 
 template<typename T>
-list<T>& list<T>::operator=(list<T>&& other) noexcept {
+List<T>& List<T>::operator=(List<T>&& other) noexcept {
 	if (this != &other) {
-		size = 0;
-		delete[] data;
+		m_size = 0;
+		delete[] m_data;
 
-		size = other.size;
-		data = other.data;
+		m_size = other.m_size;
+		m_data = other.m_data;
 		
-		other.size = 0;
-		other.data = nullptr;
+		other.m_size = 0;
+		other.m_data = nullptr;
 	}
 	return *this;
 }
 
 template<typename T>
-T& list<T>::operator[](u2 i) {
-	if (i < size)
-		return data[i];
+T& List<T>::operator[](u2 i) {
+	if (i < m_size)
+		return m_data[i];
 
 	throw std::out_of_range("Index out of bounds");
 }
 
 template<typename T>
-const T& list<T>::operator[](u2 i) const {
-	if (i < size)
-		return data[i];
+const T& List<T>::operator[](u2 i) const {
+	if (i < m_size)
+		return m_data[i];
 
 	throw std::out_of_range("Index out of bounds");
 }
 
 #include "javaData.h"
 
-template class list<u1>;
-template class list<tjvm::cpInfo>;
+template class List<u1>;
+template class List<u2>;
+template class List<u4>;
+template class List<u8>;
+template class List<tjvm::ConstantPool>;
+
