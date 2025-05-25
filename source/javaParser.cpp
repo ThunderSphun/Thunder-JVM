@@ -125,8 +125,16 @@ tjvm::ConstantPool::Utf8Info readBigEndian(std::ifstream& stream) {
 
 	info.bytes = new List<u1>(readBigEndian<u2>(stream));
 
-	for (u2 j = 0; j < info.bytes->getSize(); j++)
-		(*info.bytes)[j] = readBigEndian<u1>(stream);
+	for (u2 j = 0; j < info.bytes->getSize(); j++) {
+		u1 byte = readBigEndian<u1>(stream);
+
+		if (byte == 0)
+			throw std::underflow_error("utf8 byte cannot be 0");
+		if (byte >= 0xf0)
+			throw std::overflow_error("utf8 byte cannot be in the range 0xf0 - 0xff");
+
+		(*info.bytes)[j] = byte;
+	}
 
 	return info;
 }
@@ -173,15 +181,15 @@ std::optional<tjvm::Class> tjvm::parseClass(std::ifstream& file) {
 	java.m_minor_version = readBigEndian<u2>(file);
 	java.m_major_version = readBigEndian<u2>(file);
 
-	java.m_constantPool = parseConstantPool(file, readBigEndian<u2>(file));
+	java.m_constantPool = parseConstantPool(file, readBigEndian<u2>(file) - 1);
 
 	return std::move(std::make_optional(std::move(java)));
 }
 
-List<tjvm::ConstantPool> tjvm::parseConstantPool(std::ifstream& file, u2 amount) {
-	List<tjvm::ConstantPool> result(amount);
+List<tjvm::ConstantPool> tjvm::parseConstantPool(std::ifstream& file, u2 size) {
+	List<tjvm::ConstantPool> result(size);
 
-	for (u2 i = 0; i < amount; i++) {
+	for (u2 i = 0; i < size; i++) {
 		tjvm::ConstantPool& ref = result[i];
 		ref.m_tag = readBigEndian<tjvm::ConstantPool::Tag>(file);
 

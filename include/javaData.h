@@ -115,6 +115,3 @@ namespace tjvm {
 
 	void printInfo(const Class& javaClass);
 }
-
-std::ostream& operator<<(std::ostream& os, tjvm::ConstantPool::Tag tag);
-std::ostream& operator<<(std::ostream& os, const tjvm::ConstantPool& cp);

@@ -8,11 +8,15 @@ template<typename T>
 std::ostream& operator<<(std::ostream& os, List<T>& list) {
 	os << "List<" << typeid(T).name() << "> (" << list.getSize() << ") {";
 
+	auto fmt = [](T val) {
+		return std::format("{:0{}X}", val, sizeof(T) * 2);
+		};
+
 	if (list.getSize() > 0)
-		os << std::format("{:{}X}", list[0], sizeof(T) * 2);
+		os << fmt(list[0]);
 
 	for (u2 i = 1; i < list.getSize(); i++)
-		os << " " << std::format("{:{}X}", list[i], sizeof(T) * 2);
+		os << " " << fmt(list[i]);
 
 	return os << "}";
 }
@@ -21,11 +25,15 @@ template<typename T>
 std::ostream& operator<<(std::ostream& os, const List<T>& list) {
 	os << "List<" << typeid(T).name() << "> (" << list.getSize() << ") {";
 
+	auto fmt = [](T val) {
+		return std::format("{:0:{}X}", val, sizeof(T) * 2);
+		};
+
 	if (list.getSize() > 0)
-		os << std::format("{:{}X}", list[0], sizeof(T) * 2);
+		os << fmt(list[0]);
 
 	for (u2 i = 1; i < list.getSize(); i++)
-		os << " " << std::format("{:{}X}", list[i], sizeof(T) * 2);
+		os << " " << fmt(list[i]);
 
 	return os << "}";
 }
@@ -62,15 +70,15 @@ std::ostream& operator<<(std::ostream& os, const tjvm::ConstantPool& cp) {
 
 	switch (cp.m_tag) {
 	case tjvm::ConstantPool::Tag::Class:
-		os << std::format("${:04x}", cp.m_class.name_index); break;
+		os << std::format("${:04X}", cp.m_class.name_index); break;
 	case tjvm::ConstantPool::Tag::Fieldref:
-		os << std::format("${:04x} ${:04x}", cp.m_fieldRef.class_index, cp.m_fieldRef.name_and_type_index);break;
+		os << std::format("${:04X} ${:04X}", cp.m_fieldRef.class_index, cp.m_fieldRef.name_and_type_index);break;
 	case tjvm::ConstantPool::Tag::Methodref:
-		os << std::format("${:04x} ${:04x}", cp.m_methodRef.class_index, cp.m_methodRef.name_and_type_index);break;
+		os << std::format("${:04X} ${:04X}", cp.m_methodRef.class_index, cp.m_methodRef.name_and_type_index);break;
 	case tjvm::ConstantPool::Tag::InterfaceMethodref:
-		os << std::format("${:04x} ${:04x}", cp.m_interfaceMethodRef.class_index, cp.m_interfaceMethodRef.name_and_type_index);break;
+		os << std::format("${:04X} ${:04X}", cp.m_interfaceMethodRef.class_index, cp.m_interfaceMethodRef.name_and_type_index);break;
 	case tjvm::ConstantPool::Tag::String:
-		os << std::format("${:04x}", cp.m_string.string_index);break;
+		os << std::format("${:04X}", cp.m_string.string_index);break;
 	case tjvm::ConstantPool::Tag::Integer:
 		os << std::format("{}", cp.m_integer.bytes);break;
 	case tjvm::ConstantPool::Tag::Float:
@@ -80,15 +88,15 @@ std::ostream& operator<<(std::ostream& os, const tjvm::ConstantPool& cp) {
 	case tjvm::ConstantPool::Tag::Double:
 		os << std::format("{}", std::bit_cast<double>((u8) cp.m_double.high_bytes << 32 | cp.m_double.low_bytes)); break;
 	case tjvm::ConstantPool::Tag::NameAndType:
-		os << std::format("${:04x} ${:04x}", cp.m_nameAndType.name_index, cp.m_nameAndType.descriptor_index);break;
+		os << std::format("${:04X} ${:04X}", cp.m_nameAndType.name_index, cp.m_nameAndType.descriptor_index);break;
 	case tjvm::ConstantPool::Tag::Utf8:
 		os << *cp.m_utf8.bytes;break;
 	case tjvm::ConstantPool::Tag::MethodHandle:
-		os << std::format("{:02x} ${:04x}", cp.m_methodHandle.reference_kind, cp.m_methodHandle.reference_index);break;
+		os << std::format("{:02X} ${:04X}", cp.m_methodHandle.reference_kind, cp.m_methodHandle.reference_index);break;
 	case tjvm::ConstantPool::Tag::MethodType:
-		os << std::format("${:04x}", cp.m_methodType.descriptor_index);break;
+		os << std::format("${:04X}", cp.m_methodType.descriptor_index);break;
 	case tjvm::ConstantPool::Tag::InvokeDynamic:
-		os << std::format("${:04x} ${:04x}", cp.m_invokeDynamic.bootstrap_method_attr_index, cp.m_invokeDynamic.name_and_type_index);break;
+		os << std::format("${:04X} ${:04X}", cp.m_invokeDynamic.bootstrap_method_attr_index, cp.m_invokeDynamic.name_and_type_index);break;
 	default:
 		break;
 	}

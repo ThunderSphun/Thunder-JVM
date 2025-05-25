@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <iosfwd>
 
 using u1 = uint8_t;
 using u2 = uint16_t;
