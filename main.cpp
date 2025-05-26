@@ -62,7 +62,7 @@ void hexFile(std::ifstream& file) {
 			if (bytes[i] >= 32)
 				std::cout << std::format("{:c}", bytes[i]);
 			else
-				std::cout << ".";
+				std::cout << "\u001b[0;31m.\u001b[0m";
 		}
 
 		std::cout << std::endl;
