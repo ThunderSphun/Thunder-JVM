@@ -4,12 +4,17 @@
 #include <fstream>
 #include <iostream>
 
-const std::filesystem::path entry("testData/Main.class");
+const std::filesystem::path entry("testData/Broken.class");
 
 void hexFile(std::ifstream& file);
 
 int main() {
 	std::ifstream file(entry, std::ios::binary);
+	if (!file) {
+		std::cout << "could not open file: " << entry << std::endl;
+		return -1;
+	}
+
 	std::optional javaEntry = tjvm::parseClass(file);
 
 	if (!javaEntry) {
@@ -22,7 +27,7 @@ int main() {
 
 		file.close();
 
-		return -1;
+		return -2;
 	}
 
 	std::cout << "file is java class" << std::endl;

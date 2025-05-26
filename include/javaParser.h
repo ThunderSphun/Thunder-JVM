@@ -7,5 +7,5 @@
 
 namespace tjvm {
 	std::optional<Class> parseClass(std::ifstream& file);
-	List<ConstantPool> parseConstantPool(std::ifstream& file, u2 amount);
+	std::optional<List<ConstantPool>> parseConstantPool(std::ifstream& file, u2 amount);
 }

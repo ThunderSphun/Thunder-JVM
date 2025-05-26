@@ -4,6 +4,8 @@
 #include <format>
 #include <bit>
 
+#define CHARS
+
 template<typename T>
 std::ostream& operator<<(std::ostream& os, List<T>& list) {
 	return os << static_cast<const List<T>&>(list);
@@ -14,14 +16,26 @@ std::ostream& operator<<(std::ostream& os, const List<T>& list) {
 	os << "List<" << typeid(T).name() << "> (" << list.getSize() << ") {";
 
 	auto fmt = [](T val) {
-		return std::format("{:0{}X}", val, sizeof(T) * 2);
+		return std::format(
+#ifdef CHARS
+			"{:c}"
+#else
+			"{:0{}X}"
+#endif
+			, val, sizeof(T) * 2);
 		};
 
 	if (list.getSize() > 0)
 		os << fmt(list[0]);
 
 	for (u2 i = 1; i < list.getSize(); i++)
-		os << " " << fmt(list[i]);
+		os <<
+#ifdef CHARS
+		""
+#else
+		" "
+#endif
+		<< fmt(list[i]);
 
 	return os << "}";
 }
@@ -54,7 +68,7 @@ std::ostream& operator<<(std::ostream& os, tjvm::ConstantPool::Tag tag) {
 }
 
 std::ostream& operator<<(std::ostream& os, const tjvm::ConstantPool& cp) {
-	os << "\tconstantPool [" << cp.m_tag << "] ";
+	os << "\t[" << cp.m_tag << "] ";
 
 	switch (cp.m_tag) {
 	case tjvm::ConstantPool::Tag::Class:

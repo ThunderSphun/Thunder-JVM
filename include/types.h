@@ -16,6 +16,7 @@ public:
 	List(List<T>&& other) noexcept;
 	~List();
 
+	List<T>& operator=(List<T>& other) noexcept;
 	List<T>& operator=(List<T>&& other) noexcept;
 
 	T& operator[](u2 i);

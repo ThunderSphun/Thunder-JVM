@@ -181,39 +181,68 @@ std::optional<tjvm::Class> tjvm::parseClass(std::ifstream& file) {
 	java.m_minor_version = readBigEndian<u2>(file);
 	java.m_major_version = readBigEndian<u2>(file);
 
-	java.m_constantPool = parseConstantPool(file, readBigEndian<u2>(file) - 1);
+	std::optional<List<tjvm::ConstantPool>> cp = parseConstantPool(file, readBigEndian<u2>(file) - 1);
+	if (!cp)
+		return {};
+	java.m_constantPool = cp.value();
 
 	return std::move(java);
 }
 
-List<tjvm::ConstantPool> tjvm::parseConstantPool(std::ifstream& file, u2 size) {
-	List<tjvm::ConstantPool> result(size);
+std::optional<List<tjvm::ConstantPool>> tjvm::parseConstantPool(std::ifstream& file, u2 size) {
+	using cp = tjvm::ConstantPool;
+	using tag = cp::Tag;
+
+	List<cp> list(size);
+	bool isValid = true;
 
 	for (u2 i = 0; i < size; i++) {
-		tjvm::ConstantPool& ref = result[i];
-		ref.m_tag = readBigEndian<tjvm::ConstantPool::Tag>(file);
-
-		switch (ref.m_tag) {
-		case tjvm::ConstantPool::Tag::Class:				ref.m_class				= readBigEndian<tjvm::ConstantPool::ClassInfo>				(file); break;
-		case tjvm::ConstantPool::Tag::Fieldref:				ref.m_fieldRef			= readBigEndian<tjvm::ConstantPool::FieldrefInfo>			(file); break;
-		case tjvm::ConstantPool::Tag::Methodref:			ref.m_methodRef			= readBigEndian<tjvm::ConstantPool::MethodrefInfo>			(file); break;
-		case tjvm::ConstantPool::Tag::InterfaceMethodref:	ref.m_interfaceMethodRef= readBigEndian<tjvm::ConstantPool::InterfaceMethodrefInfo>	(file); break;
-		case tjvm::ConstantPool::Tag::String:				ref.m_string			= readBigEndian<tjvm::ConstantPool::StringInfo>				(file); break;
-		case tjvm::ConstantPool::Tag::Integer:				ref.m_integer			= readBigEndian<tjvm::ConstantPool::IntegerInfo>			(file); break;
-		case tjvm::ConstantPool::Tag::Float:				ref.m_float				= readBigEndian<tjvm::ConstantPool::FloatInfo>				(file); break;
-		case tjvm::ConstantPool::Tag::Long:					ref.m_long				= readBigEndian<tjvm::ConstantPool::LongInfo>				(file); break;
-		case tjvm::ConstantPool::Tag::Double:				ref.m_double			= readBigEndian<tjvm::ConstantPool::DoubleInfo>				(file); break;
-		case tjvm::ConstantPool::Tag::NameAndType:			ref.m_nameAndType		= readBigEndian<tjvm::ConstantPool::NameAndTypeInfo>		(file); break;
-		case tjvm::ConstantPool::Tag::Utf8:					ref.m_utf8				= readBigEndian<tjvm::ConstantPool::Utf8Info>				(file); break;
-		case tjvm::ConstantPool::Tag::MethodHandle:			ref.m_methodHandle		= readBigEndian<tjvm::ConstantPool::MethodHandleInfo>		(file); break;
-		case tjvm::ConstantPool::Tag::MethodType:			ref.m_methodType		= readBigEndian<tjvm::ConstantPool::MethodTypeInfo>			(file); break;
-		case tjvm::ConstantPool::Tag::InvokeDynamic:		ref.m_invokeDynamic		= readBigEndian<tjvm::ConstantPool::InvokeDynamicInfo>		(file); break;
-		default: {
-			std::cerr << "invalid ref tag, continuing parsing the rest of the file" << std::endl;
-			readBigEndian<u2>(file); // consume 2 bytes as that should be the minimum
-			break;
-		}}
+		cp& ref = list[i];
+		ref.m_tag = readBigEndian<tag>(file);
+		try {
+			switch (ref.m_tag) {
+			case tag::Class:				ref.m_class				= readBigEndian<cp::ClassInfo>(file);				break;
+			case tag::Fieldref:				ref.m_fieldRef			= readBigEndian<cp::FieldrefInfo>(file);			break;
+			case tag::Methodref:			ref.m_methodRef			= readBigEndian<cp::MethodrefInfo>(file);			break;
+			case tag::InterfaceMethodref:	ref.m_interfaceMethodRef= readBigEndian<cp::InterfaceMethodrefInfo>(file);	break;
+			case tag::String:				ref.m_string			= readBigEndian<cp::StringInfo>(file);				break;
+			case tag::Integer:				ref.m_integer			= readBigEndian<cp::IntegerInfo>(file);				break;
+			case tag::Float:				ref.m_float				= readBigEndian<cp::FloatInfo>(file);				break;
+			case tag::Long:					ref.m_long				= readBigEndian<cp::LongInfo>(file);				break;
+			case tag::Double:				ref.m_double			= readBigEndian<cp::DoubleInfo>(file);				break;
+			case tag::NameAndType:			ref.m_nameAndType		= readBigEndian<cp::NameAndTypeInfo>(file);			break;
+			case tag::Utf8:					ref.m_utf8				= readBigEndian<cp::Utf8Info>(file);				break;
+			case tag::MethodHandle:			ref.m_methodHandle		= readBigEndian<cp::MethodHandleInfo>(file);		break;
+			case tag::MethodType:			ref.m_methodType		= readBigEndian<cp::MethodTypeInfo>(file);			break;
+			case tag::InvokeDynamic:		ref.m_invokeDynamic		= readBigEndian<cp::InvokeDynamicInfo>(file);		break;
+			default:
+			{
+				std::cerr << "invalid ref tag, continuing parsing the rest of the file" << std::endl;
+				readBigEndian<u2>(file); // consume 2 bytes as that should be the minimum
+				break;
+			}
+			}
+		} catch (std::underflow_error err) {
+			std::cerr << err.what() << std::endl;
+			ref.m_utf8 = {};
+			ref.m_utf8.bytes = new List<u1>();
+			isValid = false;
+#ifdef _MSC_VER
+			__debugbreak();
+#endif
+		} catch (std::overflow_error err) {
+			std::cerr << err.what() << std::endl;
+			ref.m_utf8 = {};
+			ref.m_utf8.bytes = new List<u1>();
+			isValid = false;
+#ifdef _MSC_VER
+			__debugbreak();
+#endif
+		}
 	}
 
-	return result;
+	if (isValid)
+		return std::move(list);
+	else
+		return {};
 }
