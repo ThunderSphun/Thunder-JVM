@@ -46,10 +46,7 @@ List<T>& List<T>::operator=(List<T>&& other) noexcept {
 
 template<typename T>
 T& List<T>::operator[](u2 i) {
-	if (i < m_size)
-		return m_data[i];
-
-	throw std::out_of_range("Index out of bounds");
+	return const_cast<T&>(static_cast<const List&>(*this)[i]);
 }
 
 template<typename T>

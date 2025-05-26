@@ -6,19 +6,7 @@
 
 template<typename T>
 std::ostream& operator<<(std::ostream& os, List<T>& list) {
-	os << "List<" << typeid(T).name() << "> (" << list.getSize() << ") {";
-
-	auto fmt = [](T val) {
-		return std::format("{:0{}X}", val, sizeof(T) * 2);
-		};
-
-	if (list.getSize() > 0)
-		os << fmt(list[0]);
-
-	for (u2 i = 1; i < list.getSize(); i++)
-		os << " " << fmt(list[i]);
-
-	return os << "}";
+	return os << static_cast<const List<T>&>(list);
 }
 
 template<typename T>
@@ -26,7 +14,7 @@ std::ostream& operator<<(std::ostream& os, const List<T>& list) {
 	os << "List<" << typeid(T).name() << "> (" << list.getSize() << ") {";
 
 	auto fmt = [](T val) {
-		return std::format("{:0:{}X}", val, sizeof(T) * 2);
+		return std::format("{:0{}X}", val, sizeof(T) * 2);
 		};
 
 	if (list.getSize() > 0)

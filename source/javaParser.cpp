@@ -183,7 +183,7 @@ std::optional<tjvm::Class> tjvm::parseClass(std::ifstream& file) {
 
 	java.m_constantPool = parseConstantPool(file, readBigEndian<u2>(file) - 1);
 
-	return std::move(std::make_optional(std::move(java)));
+	return std::move(java);
 }
 
 List<tjvm::ConstantPool> tjvm::parseConstantPool(std::ifstream& file, u2 size) {
