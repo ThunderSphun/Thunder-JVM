@@ -30,22 +30,8 @@ List<T>::~List() {
 }
 
 template<typename T>
-List<T>& List<T>::operator=(List<T>& other) noexcept {
-	if (this != &other) {
-		m_size = 0;
-		delete[] m_data;
-
-		m_size = other.m_size;
-		m_data = new T[m_size];
-		memcpy(m_data, other.m_data, m_size);
-	}
-	return *this;
-}
-
-template<typename T>
 List<T>& List<T>::operator=(List<T>&& other) noexcept {
 	if (this != &other) {
-		m_size = 0;
 		delete[] m_data;
 
 		m_size = other.m_size;

@@ -4,7 +4,7 @@
 #include <fstream>
 #include <iostream>
 
-const std::filesystem::path entry("testData/Broken.class");
+const std::filesystem::path entry("testData/Main.class");
 
 void hexFile(std::ifstream& file);
 

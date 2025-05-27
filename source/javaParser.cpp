@@ -184,7 +184,7 @@ std::optional<tjvm::Class> tjvm::parseClass(std::ifstream& file) {
 	std::optional<List<tjvm::ConstantPool>> cp = parseConstantPool(file, readBigEndian<u2>(file) - 1);
 	if (!cp)
 		return {};
-	java.m_constantPool = cp.value();
+	java.m_constantPool = std::move(cp.value());
 
 	return std::move(java);
 }
