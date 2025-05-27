@@ -11,44 +11,44 @@ tjvm::ConstantPool::~ConstantPool() {
 		delete m_utf8.bytes;
 }
 
-tjvm::AccessFlags tjvm::operator|(const AccessFlags& l, const AccessFlags& r) {
-	return tjvm::AccessFlags(std::to_underlying(l) | std::to_underlying(r));
+tjvm::ClassFlags tjvm::operator|(const ClassFlags& l, const ClassFlags& r) {
+	return tjvm::ClassFlags(std::to_underlying(l) | std::to_underlying(r));
 }
 
-tjvm::AccessFlags tjvm::operator&(const AccessFlags& l, const AccessFlags& r) {
-	return tjvm::AccessFlags(std::to_underlying(l) & std::to_underlying(r));
+tjvm::ClassFlags tjvm::operator&(const ClassFlags& l, const ClassFlags& r) {
+	return tjvm::ClassFlags(std::to_underlying(l) & std::to_underlying(r));
 }
 
-tjvm::AccessFlags tjvm::operator^(const AccessFlags& l, const AccessFlags& r) {
-	return tjvm::AccessFlags(std::to_underlying(l) ^ std::to_underlying(r));
+tjvm::ClassFlags tjvm::operator^(const ClassFlags& l, const ClassFlags& r) {
+	return tjvm::ClassFlags(std::to_underlying(l) ^ std::to_underlying(r));
 }
 
-tjvm::AccessFlags tjvm::operator~(const AccessFlags& l) {
-	AccessFlags retval = l;
+tjvm::ClassFlags tjvm::operator~(const ClassFlags& l) {
+	ClassFlags retval = l;
 
-	retval ^= tjvm::AccessFlags::Public;
-	retval ^= tjvm::AccessFlags::Final;
-	retval ^= tjvm::AccessFlags::Super;
-	retval ^= tjvm::AccessFlags::Interface;
-	retval ^= tjvm::AccessFlags::Abstract;
-	retval ^= tjvm::AccessFlags::Synthetic;
-	retval ^= tjvm::AccessFlags::Annotation;
-	retval ^= tjvm::AccessFlags::Enum;
+	retval ^= tjvm::ClassFlags::Public;
+	retval ^= tjvm::ClassFlags::Final;
+	retval ^= tjvm::ClassFlags::Super;
+	retval ^= tjvm::ClassFlags::Interface;
+	retval ^= tjvm::ClassFlags::Abstract;
+	retval ^= tjvm::ClassFlags::Synthetic;
+	retval ^= tjvm::ClassFlags::Annotation;
+	retval ^= tjvm::ClassFlags::Enum;
 
 	return retval;
 }
 
-tjvm::AccessFlags& tjvm::operator|=(AccessFlags& l, const AccessFlags& r) {
+tjvm::ClassFlags& tjvm::operator|=(ClassFlags& l, const ClassFlags& r) {
 	l = l | r;
 	return l;
 }
 
-tjvm::AccessFlags& tjvm::operator&=(AccessFlags& l, const AccessFlags& r) {
+tjvm::ClassFlags& tjvm::operator&=(ClassFlags& l, const ClassFlags& r) {
 	l = l & r;
 	return l;
 }
 
-tjvm::AccessFlags& tjvm::operator^=(AccessFlags& l, const AccessFlags& r) {
+tjvm::ClassFlags& tjvm::operator^=(ClassFlags& l, const ClassFlags& r) {
 	l = l ^ r;
 	return l;
 }

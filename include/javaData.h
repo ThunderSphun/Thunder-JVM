@@ -108,7 +108,7 @@ namespace tjvm {
 		};
 	};
 
-	enum class AccessFlags : u2 {
+	enum class ClassFlags : u2 {
 		Public		= 0x0001,
 		Final		= 0x0010,
 		Super		= 0x0020,
@@ -119,14 +119,14 @@ namespace tjvm {
 		Enum		= 0x4000,
 	};
 
-	AccessFlags operator|(const AccessFlags& l, const AccessFlags& r);
-	AccessFlags operator&(const AccessFlags& l, const AccessFlags& r);
-	AccessFlags operator^(const AccessFlags& l, const AccessFlags& r);
-	AccessFlags operator~(const AccessFlags& l);
+	ClassFlags operator|(const ClassFlags& l, const ClassFlags& r);
+	ClassFlags operator&(const ClassFlags& l, const ClassFlags& r);
+	ClassFlags operator^(const ClassFlags& l, const ClassFlags& r);
+	ClassFlags operator~(const ClassFlags& l);
 
-	AccessFlags& operator|=(AccessFlags& l, const AccessFlags& r);
-	AccessFlags& operator&=(AccessFlags& l, const AccessFlags& r);
-	AccessFlags& operator^=(AccessFlags& l, const AccessFlags& r);
+	ClassFlags& operator|=(ClassFlags& l, const ClassFlags& r);
+	ClassFlags& operator&=(ClassFlags& l, const ClassFlags& r);
+	ClassFlags& operator^=(ClassFlags& l, const ClassFlags& r);
 
 	struct Class {
 		u2 m_minor_version;
@@ -134,7 +134,7 @@ namespace tjvm {
 
 		List<ConstantPool> m_constantPool;
 
-		AccessFlags m_accessFlags;
+		ClassFlags m_accessFlags;
 		
 		u2 m_thisClass;
 		u2 m_superClass;

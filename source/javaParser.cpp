@@ -186,7 +186,7 @@ std::optional<tjvm::Class> tjvm::parseClass(std::ifstream& file) {
 		return {};
 	java.m_constantPool = std::move(cp.value());
 
-	java.m_accessFlags = tjvm::AccessFlags(readBigEndian<u2>(file));
+	java.m_accessFlags = tjvm::ClassFlags(readBigEndian<u2>(file));
 
 	java.m_thisClass = readBigEndian<u2>(file);
 	java.m_superClass = readBigEndian<u2>(file);
