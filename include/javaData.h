@@ -2,6 +2,8 @@
 
 #include "types.h"
 
+#include <string>
+
 namespace tjvm {
 	struct ConstantPool {
 		enum struct Tag : u1 {
@@ -111,7 +113,13 @@ namespace tjvm {
 		u2 m_major_version;
 
 		List<ConstantPool> m_constantPool;
+
+		u2 m_accessFlags;
+		
+		u2 m_thisClass;
+		u2 m_superClass;
 	};
 
 	void printInfo(const Class& javaClass);
+	std::string getCPString(const List<ConstantPool>& cp, u2 index, ConstantPool::Tag tag);
 }
