@@ -191,6 +191,10 @@ std::optional<tjvm::Class> tjvm::parseClass(std::ifstream& file) {
 	java.m_thisClass = readBigEndian<u2>(file);
 	java.m_superClass = readBigEndian<u2>(file);
 
+	java.m_interfaces = List<u2>(readBigEndian<u2>(file));
+	for (u2 i = 0; i < java.m_interfaces.getSize(); i++)
+		java.m_interfaces[i] = readBigEndian<u2>(file);
+
 	return std::move(java);
 }
 

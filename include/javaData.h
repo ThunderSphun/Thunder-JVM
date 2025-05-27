@@ -138,6 +138,8 @@ namespace tjvm {
 		
 		u2 m_thisClass;
 		u2 m_superClass;
+
+		List<u2> m_interfaces;
 	};
 
 	void printInfo(const Class& javaClass);
