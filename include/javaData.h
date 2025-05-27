@@ -134,7 +134,7 @@ namespace tjvm {
 
 		List<ConstantPool> m_constantPool;
 
-		u2 m_accessFlags;
+		AccessFlags m_accessFlags;
 		
 		u2 m_thisClass;
 		u2 m_superClass;

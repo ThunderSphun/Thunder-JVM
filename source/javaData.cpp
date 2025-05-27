@@ -11,6 +11,48 @@ tjvm::ConstantPool::~ConstantPool() {
 		delete m_utf8.bytes;
 }
 
+tjvm::AccessFlags tjvm::operator|(const AccessFlags& l, const AccessFlags& r) {
+	return tjvm::AccessFlags(std::to_underlying(l) | std::to_underlying(r));
+}
+
+tjvm::AccessFlags tjvm::operator&(const AccessFlags& l, const AccessFlags& r) {
+	return tjvm::AccessFlags(std::to_underlying(l) & std::to_underlying(r));
+}
+
+tjvm::AccessFlags tjvm::operator^(const AccessFlags& l, const AccessFlags& r) {
+	return tjvm::AccessFlags(std::to_underlying(l) ^ std::to_underlying(r));
+}
+
+tjvm::AccessFlags tjvm::operator~(const AccessFlags& l) {
+	AccessFlags retval = l;
+
+	retval ^= tjvm::AccessFlags::Public;
+	retval ^= tjvm::AccessFlags::Final;
+	retval ^= tjvm::AccessFlags::Super;
+	retval ^= tjvm::AccessFlags::Interface;
+	retval ^= tjvm::AccessFlags::Abstract;
+	retval ^= tjvm::AccessFlags::Synthetic;
+	retval ^= tjvm::AccessFlags::Annotation;
+	retval ^= tjvm::AccessFlags::Enum;
+
+	return retval;
+}
+
+tjvm::AccessFlags& tjvm::operator|=(AccessFlags& l, const AccessFlags& r) {
+	l = l | r;
+	return l;
+}
+
+tjvm::AccessFlags& tjvm::operator&=(AccessFlags& l, const AccessFlags& r) {
+	l = l & r;
+	return l;
+}
+
+tjvm::AccessFlags& tjvm::operator^=(AccessFlags& l, const AccessFlags& r) {
+	l = l ^ r;
+	return l;
+}
+
 template<typename T>
 std::ostream& operator<<(std::ostream& os, List<T>& list) {
 	return os << static_cast<const List<T>&>(list);
@@ -152,10 +194,10 @@ void tjvm::printInfo(const Class& javaClass) {
 	for (u2 i = 0; i < javaClass.m_constantPool.getSize(); i++)
 		std::cout << javaClass.m_constantPool[i] << std::endl;
 
-	std::cout << "flags: " << std::format("{:04X}", javaClass.m_accessFlags) << std::endl;
+	std::cout << "flags: " << std::format("{:04X}", (u2) javaClass.m_accessFlags) << std::endl;
 
 	std::cout << "this: " << std::format("${:04X}", javaClass.m_thisClass) << " ";
-	std::cout << getCPString(javaClass.m_constantPool, javaClass.m_thisClass, tjvm::ConstantPool::Tag::Class) << std::endl;
+	std::cout << tjvm::getCPString(javaClass.m_constantPool, javaClass.m_thisClass, tjvm::ConstantPool::Tag::Class) << std::endl;
 
 	std::cout << "super: " << std::format("${:04X}", javaClass.m_superClass) << " ";
 	if (javaClass.m_superClass == 0)
