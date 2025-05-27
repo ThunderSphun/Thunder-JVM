@@ -7,20 +7,20 @@
 namespace tjvm {
 	struct ConstantPool {
 		enum struct Tag : u1 {
-			Class = 7,
-			Fieldref = 9,
-			Methodref = 10,
-			InterfaceMethodref = 11,
-			String = 8,
-			Integer = 3,
-			Float = 4,
-			Long = 5,
-			Double = 6,
-			NameAndType = 12,
-			Utf8 = 1,
-			MethodHandle = 15,
-			MethodType = 16,
-			InvokeDynamic = 18,
+			Class				= 7,
+			Fieldref			= 9,
+			Methodref			= 10,
+			InterfaceMethodref	= 11,
+			String				= 8,
+			Integer				= 3,
+			Float				= 4,
+			Long				= 5,
+			Double				= 6,
+			NameAndType			= 12,
+			Utf8				= 1,
+			MethodHandle		= 15,
+			MethodType			= 16,
+			InvokeDynamic		= 18,
 		};
 
 		struct ClassInfo {
@@ -107,6 +107,26 @@ namespace tjvm {
 			InvokeDynamicInfo m_invokeDynamic;
 		};
 	};
+
+	enum class AccessFlags : u2 {
+		Public		= 0x0001,
+		Final		= 0x0010,
+		Super		= 0x0020,
+		Interface	= 0x0200,
+		Abstract	= 0x0400,
+		Synthetic	= 0x1000,
+		Annotation	= 0x2000,
+		Enum		= 0x4000,
+	};
+
+	AccessFlags operator|(const AccessFlags& l, const AccessFlags& r);
+	AccessFlags operator&(const AccessFlags& l, const AccessFlags& r);
+	AccessFlags operator^(const AccessFlags& l, const AccessFlags& r);
+	AccessFlags operator~(const AccessFlags& l);
+
+	AccessFlags& operator|=(AccessFlags& l, const AccessFlags& r);
+	AccessFlags& operator&=(AccessFlags& l, const AccessFlags& r);
+	AccessFlags& operator^=(AccessFlags& l, const AccessFlags& r);
 
 	struct Class {
 		u2 m_minor_version;

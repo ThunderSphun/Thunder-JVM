@@ -101,6 +101,48 @@ std::ostream& operator<<(std::ostream& os, const tjvm::ConstantPool& cp) {
 	return os;
 }
 
+tjvm::AccessFlags tjvm::operator|(const AccessFlags& l, const AccessFlags& r) {
+	return tjvm::AccessFlags(std::to_underlying(l) | std::to_underlying(r));
+}
+
+tjvm::AccessFlags tjvm::operator&(const AccessFlags& l, const AccessFlags& r) {
+	return tjvm::AccessFlags(std::to_underlying(l) & std::to_underlying(r));
+}
+
+tjvm::AccessFlags tjvm::operator^(const AccessFlags& l, const AccessFlags& r) {
+	return tjvm::AccessFlags(std::to_underlying(l) ^ std::to_underlying(r));
+}
+
+tjvm::AccessFlags tjvm::operator~(const AccessFlags& l) {
+	AccessFlags retval = l;
+
+	retval ^= tjvm::AccessFlags::Public;
+	retval ^= tjvm::AccessFlags::Final;
+	retval ^= tjvm::AccessFlags::Super;
+	retval ^= tjvm::AccessFlags::Interface;
+	retval ^= tjvm::AccessFlags::Abstract;
+	retval ^= tjvm::AccessFlags::Synthetic;
+	retval ^= tjvm::AccessFlags::Annotation;
+	retval ^= tjvm::AccessFlags::Enum;
+
+	return retval;
+}
+
+tjvm::AccessFlags& tjvm::operator|=(AccessFlags& l, const AccessFlags& r) {
+	l = l | r;
+	return l;
+}
+
+tjvm::AccessFlags& tjvm::operator&=(AccessFlags& l, const AccessFlags& r) {
+	l = l & r;
+	return l;
+}
+
+tjvm::AccessFlags& tjvm::operator^=(AccessFlags& l, const AccessFlags& r) {
+	l = l ^ r;
+	return l;
+}
+
 void tjvm::printInfo(const Class& javaClass) {
 	std::cout << "JAVA CLASS" << std::endl << std::string(75, '-') << std::endl << "CAFEBABE" << std::endl;
 
