@@ -1,9 +1,10 @@
 #pragma once
 
+#include "types.h"
 #include "javaData.h"
 
 #include <optional>
-#include <fstream>
+#include <iosfwd>
 
 namespace tjvm {
 	std::optional<Class> parseClass(std::ifstream& file);

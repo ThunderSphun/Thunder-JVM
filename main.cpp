@@ -1,4 +1,5 @@
 #include "javaParser.h"
+#include "javaData.h"
 
 #include <filesystem>
 #include <fstream>

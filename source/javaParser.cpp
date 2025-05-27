@@ -1,6 +1,8 @@
 #include "javaParser.h"
+
 #include "types.h"
 
+#include <fstream>
 #include <iostream>
 #include <type_traits>
 

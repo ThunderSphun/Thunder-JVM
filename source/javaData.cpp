@@ -3,6 +3,8 @@
 #include <iostream>
 #include <format>
 #include <bit>
+#include <utility>
+#include <iosfwd>
 
 #define CHARS
 
@@ -63,13 +65,31 @@ std::ostream& operator<<(std::ostream& os, const List<T>& list) {
 	os << "List<" << typeid(T).name() << "> (" << list.getSize() << ") {";
 
 	auto fmt = [](T val) {
+		return std::format("{:0{}X}", val, sizeof(T) * 2);
+		};
+
+	if (list.getSize() > 0)
+		os << fmt(list[0]);
+
+	for (u2 i = 1; i < list.getSize(); i++)
+		os << " " << fmt(list[i]);
+
+	return os << "}";
+}
+
+template<>
+std::ostream& operator<<(std::ostream& os, const List<u1>& list) {
+	// keeping typeid(u1).name() for correct expansion of type alias
+	os << "List<" << typeid(u1).name() << "> (" << list.getSize() << ") {";
+
+	auto fmt = [](u1 val) {
 		return std::format(
 #ifdef CHARS
 			"{:c}"
 #else
-			"{:0{}X}"
+			"{:02X}"
 #endif
-			, val, sizeof(T) * 2);
+			, val);
 		};
 
 	if (list.getSize() > 0)
@@ -118,22 +138,22 @@ std::ostream& operator<<(std::ostream& os, const tjvm::ConstantPool& cp) {
 	os << "\t[" << cp.m_tag << "] ";
 
 	switch (cp.m_tag) {
-	case tjvm::ConstantPool::Tag::Integer			:os << std::format("{}"				, cp.m_integer.bytes);break;
-	case tjvm::ConstantPool::Tag::Float				:os << std::format("{}"				, std::bit_cast<float>(cp.m_float.bytes));break;
-	case tjvm::ConstantPool::Tag::Long				:os << std::format("{}"				, (u8) cp.m_long.high_bytes << 32 + cp.m_long.low_bytes);break;
-	case tjvm::ConstantPool::Tag::Double			:os << std::format("{}"				, std::bit_cast<double>((u8) cp.m_double.high_bytes << 32 + cp.m_double.low_bytes)); break;
+	case tjvm::ConstantPool::Tag::Integer			:os << std::format("{}"				,						cp.m_integer.bytes);break;
+	case tjvm::ConstantPool::Tag::Float				:os << std::format("{}"				, std::bit_cast<float>(	cp.m_float.bytes));	break;
+	case tjvm::ConstantPool::Tag::Long				:os << std::format("{}"				,						(u8) cp.m_long.high_bytes << 32 + cp.m_long.low_bytes);		break;
+	case tjvm::ConstantPool::Tag::Double			:os << std::format("{}"				, std::bit_cast<double>((u8) cp.m_double.high_bytes << 32 + cp.m_double.low_bytes));break;
 
-	case tjvm::ConstantPool::Tag::Class				:os << std::format("${:04X}"		, cp.m_class.name_index); break;
-	case tjvm::ConstantPool::Tag::String			:os << std::format("${:04X}"		, cp.m_string.string_index);break;
+	case tjvm::ConstantPool::Tag::Class				:os << std::format("${:04X}"		, cp.m_class.name_index);			break;
+	case tjvm::ConstantPool::Tag::String			:os << std::format("${:04X}"		, cp.m_string.string_index);		break;
 	case tjvm::ConstantPool::Tag::MethodType		:os << std::format("${:04X}"		, cp.m_methodType.descriptor_index);break;
 	
 	case tjvm::ConstantPool::Tag::MethodHandle		:os << std::format("{:02X} ${:04X}"	, cp.m_methodHandle.reference_kind, cp.m_methodHandle.reference_index);break;
 	
-	case tjvm::ConstantPool::Tag::Fieldref			:os << std::format("${:04X} ${:04X}", cp.m_fieldRef.class_index, cp.m_fieldRef.name_and_type_index);break;
-	case tjvm::ConstantPool::Tag::Methodref			:os << std::format("${:04X} ${:04X}", cp.m_methodRef.class_index, cp.m_methodRef.name_and_type_index);break;
+	case tjvm::ConstantPool::Tag::Fieldref			:os << std::format("${:04X} ${:04X}", cp.m_fieldRef.class_index, cp.m_fieldRef.name_and_type_index);					break;
+	case tjvm::ConstantPool::Tag::Methodref			:os << std::format("${:04X} ${:04X}", cp.m_methodRef.class_index, cp.m_methodRef.name_and_type_index);					break;
 	case tjvm::ConstantPool::Tag::InterfaceMethodref:os << std::format("${:04X} ${:04X}", cp.m_interfaceMethodRef.class_index, cp.m_interfaceMethodRef.name_and_type_index);break;
-	case tjvm::ConstantPool::Tag::NameAndType		:os << std::format("${:04X} ${:04X}", cp.m_nameAndType.name_index, cp.m_nameAndType.descriptor_index);break;
-	case tjvm::ConstantPool::Tag::InvokeDynamic		:os << std::format("${:04X} ${:04X}", cp.m_invokeDynamic.bootstrap_method_attr_index, cp.m_invokeDynamic.name_and_type_index);break;
+	case tjvm::ConstantPool::Tag::NameAndType		:os << std::format("${:04X} ${:04X}", cp.m_nameAndType.name_index, cp.m_nameAndType.descriptor_index);							break;
+	case tjvm::ConstantPool::Tag::InvokeDynamic		:os << std::format("${:04X} ${:04X}", cp.m_invokeDynamic.bootstrap_method_attr_index, cp.m_invokeDynamic.name_and_type_index);	break;
 	
 	case tjvm::ConstantPool::Tag::Utf8				:os << *cp.m_utf8.bytes;break;
 	
@@ -180,16 +200,16 @@ std::string tjvm::getCPString(const List<ConstantPool>& cp, u2 index, ConstantPo
 
 	case ConstantPool::Tag::Fieldref:
 		return std::format("{} {}",
-			getCPString(cp, ref.m_fieldRef.class_index, ConstantPool::Tag::Class),
-			getCPString(cp, ref.m_fieldRef.name_and_type_index, ConstantPool::Tag::NameAndType));
+			getCPString(cp, ref.m_fieldRef.class_index,			ConstantPool::Tag::Class),
+			getCPString(cp, ref.m_fieldRef.name_and_type_index,	ConstantPool::Tag::NameAndType));
 	case ConstantPool::Tag::Methodref:
 		return std::format("{} {}",
-			getCPString(cp, ref.m_methodRef.class_index, ConstantPool::Tag::Class),
-			getCPString(cp, ref.m_methodRef.name_and_type_index, ConstantPool::Tag::NameAndType));
+			getCPString(cp, ref.m_methodRef.class_index,			ConstantPool::Tag::Class),
+			getCPString(cp, ref.m_methodRef.name_and_type_index,	ConstantPool::Tag::NameAndType));
 	case ConstantPool::Tag::InterfaceMethodref:
 		return std::format("{} {}",
-			getCPString(cp, ref.m_interfaceMethodRef.class_index, ConstantPool::Tag::Class),
-			getCPString(cp, ref.m_interfaceMethodRef.name_and_type_index, ConstantPool::Tag::NameAndType));
+			getCPString(cp, ref.m_interfaceMethodRef.class_index,			ConstantPool::Tag::Class),
+			getCPString(cp, ref.m_interfaceMethodRef.name_and_type_index,	ConstantPool::Tag::NameAndType));
 
 	case ConstantPool::Tag::String:
 		return getCPString(cp, ref.m_string.string_index, ConstantPool::Tag::Utf8);
@@ -206,8 +226,8 @@ std::string tjvm::getCPString(const List<ConstantPool>& cp, u2 index, ConstantPo
 
 	case ConstantPool::Tag::NameAndType:
 		return std::format("{} {}",
-			getCPString(cp, ref.m_nameAndType.name_index, ConstantPool::Tag::Utf8),
-			getCPString(cp, ref.m_nameAndType.descriptor_index, ConstantPool::Tag::Utf8));
+			getCPString(cp, ref.m_nameAndType.name_index,		ConstantPool::Tag::Utf8),
+			getCPString(cp, ref.m_nameAndType.descriptor_index,	ConstantPool::Tag::Utf8));
 
 	case ConstantPool::Tag::Utf8:
 		return "utf8";
