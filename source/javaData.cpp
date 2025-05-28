@@ -6,7 +6,7 @@
 #include <utility>
 #include <iosfwd>
 
-#define CHARS
+//#define CHARS
 
 tjvm::ConstantPool::~ConstantPool() {
 	if (m_tag == Tag::Utf8)

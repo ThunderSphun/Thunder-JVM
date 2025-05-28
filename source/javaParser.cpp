@@ -2,9 +2,12 @@
 
 #include "types.h"
 
+#include <iosfwd>
 #include <fstream>
 #include <iostream>
 #include <type_traits>
+#include <bit>
+#include <format>
 
 template<typename T>
 T readBigEndian(std::ifstream& stream) {
@@ -126,16 +129,60 @@ tjvm::ConstantPool::Utf8Info readBigEndian(std::ifstream& stream) {
 	tjvm::ConstantPool::Utf8Info info{};
 
 	info.bytes = new List<u1>(readBigEndian<u2>(stream));
+	u2 bytesWritten = 0;
 
-	for (u2 j = 0; j < info.bytes->getSize(); j++) {
+	while (bytesWritten < info.bytes->getSize()) {
 		u1 byte = readBigEndian<u1>(stream);
 
 		if (byte == 0)
-			throw std::underflow_error("utf8 byte cannot be 0");
+			throw std::format_error("utf8 byte cannot be 0");
 		if (byte >= 0xf0)
-			throw std::overflow_error("utf8 byte cannot be in the range 0xf0 - 0xff");
+			throw std::format_error("utf8 byte cannot be in the range 0xf0 - 0xff");
 
-		(*info.bytes)[j] = byte;
+		if (byte == 0b11101101) {								// utf16
+			u1 u = byte;
+			u1 v = readBigEndian<u1>(stream);
+			u1 w = readBigEndian<u1>(stream);
+			u1 x = readBigEndian<u1>(stream);
+			u1 y = readBigEndian<u1>(stream);
+			u1 z = readBigEndian<u1>(stream);
+
+			if ((v & (0b1010 << 4))	!= (0b1010 << 4))	throw std::format_error("utf16 byte[1] should start with '0b1010'");
+			if ((w & (0b10   << 6))	!= (0b10   << 6))	throw std::format_error("utf16 byte[2] should start with '0b10'");
+			if ( x					!=  0b11101101  )	throw std::format_error("utf16 byte[3] should be '0b11101101'");
+			if ((y & (0b1011 << 4))	!= (0b1011 << 4))	throw std::format_error("utf16 byte[4] should start with '0b1011'");
+			if ((z & (0b10   << 6))	!= (0b10   << 6))	throw std::format_error("utf16 byte[5] should start with '0b10'");
+
+			(*info.bytes)[bytesWritten++] = u;
+			(*info.bytes)[bytesWritten++] = v;
+			(*info.bytes)[bytesWritten++] = w;
+			(*info.bytes)[bytesWritten++] = x;
+			(*info.bytes)[bytesWritten++] = y;
+			(*info.bytes)[bytesWritten++] = z;
+		} else if ((byte & (0b1110 << 4)) == (0b1110 << 4)) {	// 0x0800 - 0xFFFF
+			u1 x = byte;
+			u1 y = readBigEndian<u1>(stream);
+			u1 z = readBigEndian<u1>(stream);
+
+			if ((y & (0b10 << 6)) != (0b10 << 6))	throw std::format_error("utf8 byte[1] should start with '0b10'");
+			if ((z & (0b10 << 6)) != (0b10 << 6))	throw std::format_error("utf8 byte[2] should start with '0b10'");
+
+			(*info.bytes)[bytesWritten++] = x;
+			(*info.bytes)[bytesWritten++] = y;
+			(*info.bytes)[bytesWritten++] = z;
+		} else if ((byte & (0b110 << 5)) == (0b110 << 5)) {		// 0x0080 - 0x07FF
+			u1 x = byte;
+			u1 y = readBigEndian<u1>(stream);
+
+			if ((y & (0b10 << 6)) != (0b10 << 6))	throw std::format_error("utf8 byte[1] should start with '0b10'");
+
+			(*info.bytes)[bytesWritten++] = x;
+			(*info.bytes)[bytesWritten++] = y;
+		} else if ((byte & (0b0 << 7)) == (0b0 << 7)) {			// 0x0001 - 0x007F
+			(*info.bytes)[bytesWritten++] = byte;
+		} else {
+			throw std::format_error(std::format("{} {}", "unknown utf8 byte", byte));
+		}
 	}
 
 	return info;
@@ -233,15 +280,7 @@ std::optional<List<tjvm::ConstantPool>> tjvm::parseConstantPool(std::ifstream& f
 				break;
 			}
 			}
-		} catch (std::underflow_error err) {
-			std::cerr << err.what() << std::endl;
-			ref.m_utf8 = {};
-			ref.m_utf8.bytes = new List<u1>();
-			isValid = false;
-#ifdef _MSC_VER
-			__debugbreak();
-#endif
-		} catch (std::overflow_error err) {
+		} catch (std::format_error err) {
 			std::cerr << err.what() << std::endl;
 			ref.m_utf8 = {};
 			ref.m_utf8.bytes = new List<u1>();
