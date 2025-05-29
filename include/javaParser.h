@@ -7,6 +7,6 @@
 #include <iosfwd>
 
 namespace tjvm {
-	std::optional<Class> parseClass(std::ifstream& file);
-	std::optional<List<ConstantPool>> parseConstantPool(std::ifstream& file, u2 amount);
+	std::optional<tjvm::Class> parseClass(std::ifstream& file);
+	std::optional<List<tjvm::ConstantPool>> parseConstantPool(std::ifstream& file, const u2 amount);
 }

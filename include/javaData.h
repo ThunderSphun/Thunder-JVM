@@ -17,22 +17,22 @@ namespace tjvm {
 		Enum		= 0x4000,
 	};
 
-	ClassFlags operator|(const ClassFlags& l, const ClassFlags& r);
-	ClassFlags operator&(const ClassFlags& l, const ClassFlags& r);
-	ClassFlags operator^(const ClassFlags& l, const ClassFlags& r);
-	ClassFlags operator~(const ClassFlags& l);
+	tjvm::ClassFlags operator|(const tjvm::ClassFlags& l, const tjvm::ClassFlags& r);
+	tjvm::ClassFlags operator&(const tjvm::ClassFlags& l, const tjvm::ClassFlags& r);
+	tjvm::ClassFlags operator^(const tjvm::ClassFlags& l, const tjvm::ClassFlags& r);
+	tjvm::ClassFlags operator~(const tjvm::ClassFlags& l);
 
-	ClassFlags& operator|=(ClassFlags& l, const ClassFlags& r);
-	ClassFlags& operator&=(ClassFlags& l, const ClassFlags& r);
-	ClassFlags& operator^=(ClassFlags& l, const ClassFlags& r);
+	tjvm::ClassFlags& operator|=(tjvm::ClassFlags& l, const tjvm::ClassFlags& r);
+	tjvm::ClassFlags& operator&=(tjvm::ClassFlags& l, const tjvm::ClassFlags& r);
+	tjvm::ClassFlags& operator^=(tjvm::ClassFlags& l, const tjvm::ClassFlags& r);
 
 	struct Class {
 		u2 m_minor_version;
 		u2 m_major_version;
 
-		List<ConstantPool> m_constantPool;
+		List<tjvm::ConstantPool> m_constantPool;
 
-		ClassFlags m_accessFlags;
+		tjvm::ClassFlags m_accessFlags;
 		
 		u2 m_thisClass;
 		u2 m_superClass;
@@ -40,6 +40,6 @@ namespace tjvm {
 		List<u2> m_interfaces;
 	};
 
-	void printInfo(const Class& javaClass);
-	std::string getCPString(const List<ConstantPool>& cp, u2 index, ConstantPool::Tag tag);
+	void printInfo(const tjvm::Class& javaClass);
+	std::string getCPString(const List<tjvm::ConstantPool>& cp, const u2 index, const ConstantPool::Tag tag);
 }

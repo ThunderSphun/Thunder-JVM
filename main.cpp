@@ -1,15 +1,25 @@
-#include "javaParser.h"
+﻿#include "javaParser.h"
 #include "javaData.h"
 
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 
+#ifdef WIN32
+#include <windows.h>
+#endif
+
+#pragma execution_character_set("utf-8")
+
 const std::filesystem::path entry("testData/Main.class");
 
 void hexFile(std::ifstream& file);
 
 int main() {
+#ifdef WIN32
+	SetConsoleOutputCP(65001);
+#endif
+
 	std::ifstream file(entry, std::ios::binary);
 	if (!file) {
 		std::cout << "could not open file: " << entry << std::endl;
@@ -18,26 +28,23 @@ int main() {
 
 	std::optional javaEntry = tjvm::parseClass(file);
 
-	if (!javaEntry) {
-		std::cout << "file is not java class" << std::endl;
+	if (javaEntry)
+		std::cout << "file is a java class" << std::endl;
+	else
+		std::cout << std::endl << "file is not a java class" << std::endl;
 
-		file.clear();
-		file.seekg(0);
+	std::cout << std::endl;
 
-		hexFile(file);
+	file.seekg(0);
+	hexFile(file);
+	file.close();
 
-		file.close();
-
+	if (!javaEntry)
 		return -2;
-	}
-
-	std::cout << "file is java class" << std::endl;
 
 	std::cout << std::endl;
 
 	tjvm::printInfo(javaEntry.value());
-
-	file.close();
 
 	return 0;
 }

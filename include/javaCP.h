@@ -68,7 +68,7 @@ namespace tjvm {
 		};
 
 		struct Utf8Info {
-			List<u1>* bytes;
+			List<tjvm::Utf8>* bytes;
 		};
 
 		struct MethodHandleInfo {
@@ -87,22 +87,22 @@ namespace tjvm {
 
 		~ConstantPool();
 
-		Tag m_tag;
+		tjvm::ConstantPool::Tag m_tag;
 		union {
-			ClassInfo m_class;
-			FieldrefInfo m_fieldRef;
-			MethodrefInfo m_methodRef;
-			InterfaceMethodrefInfo m_interfaceMethodRef;
-			StringInfo m_string;
-			IntegerInfo m_integer;
-			FloatInfo m_float;
-			LongInfo m_long;
-			DoubleInfo m_double;
-			NameAndTypeInfo m_nameAndType;
-			Utf8Info m_utf8;
-			MethodHandleInfo m_methodHandle;
-			MethodTypeInfo m_methodType;
-			InvokeDynamicInfo m_invokeDynamic;
+			tjvm::ConstantPool::ClassInfo m_class;
+			tjvm::ConstantPool::FieldrefInfo m_fieldRef;
+			tjvm::ConstantPool::MethodrefInfo m_methodRef;
+			tjvm::ConstantPool::InterfaceMethodrefInfo m_interfaceMethodRef;
+			tjvm::ConstantPool::StringInfo m_string;
+			tjvm::ConstantPool::IntegerInfo m_integer;
+			tjvm::ConstantPool::FloatInfo m_float;
+			tjvm::ConstantPool::LongInfo m_long;
+			tjvm::ConstantPool::DoubleInfo m_double;
+			tjvm::ConstantPool::NameAndTypeInfo m_nameAndType;
+			tjvm::ConstantPool::Utf8Info m_utf8;
+			tjvm::ConstantPool::MethodHandleInfo m_methodHandle;
+			tjvm::ConstantPool::MethodTypeInfo m_methodType;
+			tjvm::ConstantPool::InvokeDynamicInfo m_invokeDynamic;
 		};
 	};
 }

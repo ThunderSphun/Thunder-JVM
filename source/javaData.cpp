@@ -6,8 +6,6 @@
 #include <utility>
 #include <iosfwd>
 
-//#define CHARS
-
 tjvm::ConstantPool::~ConstantPool() {
 	if (m_tag == Tag::Utf8)
 		delete m_utf8.bytes;
@@ -66,7 +64,7 @@ std::ostream& operator<<(std::ostream& os, const List<T>& list) {
 
 	auto fmt = [](T val) {
 		return std::format("{:0{}X}", val, sizeof(T) * 2);
-		};
+	};
 
 	if (list.getSize() > 0)
 		os << fmt(list[0]);
@@ -83,26 +81,25 @@ std::ostream& operator<<(std::ostream& os, const List<u1>& list) {
 	os << "List<" << typeid(u1).name() << "> (" << list.getSize() << ") {";
 
 	auto fmt = [](u1 val) {
-		return std::format(
-#ifdef CHARS
-			"{:c}"
-#else
-			"{:02X}"
-#endif
-			, val);
-		};
+		return std::format("{:02X}", val);
+	};
 
 	if (list.getSize() > 0)
 		os << fmt(list[0]);
 
 	for (u2 i = 1; i < list.getSize(); i++)
-		os <<
-#ifdef CHARS
-		""
-#else
-		" "
-#endif
-		<< fmt(list[i]);
+		os << " " << fmt(list[i]);
+
+	return os << "}";
+}
+
+template<>
+std::ostream& operator<<(std::ostream& os, const List<tjvm::Utf8>& list) {
+	// keeping typeid(tjvm::Utf8).name() for correct expansion of type alias
+	os << "List<" << typeid(tjvm::Utf8).name() << "> (" << list.getSize() << ") {";
+
+	for (u2 i = 0; i < list.getSize(); i++)
+		os << std::to_string(list[i]);
 
 	return os << "}";
 }
@@ -189,61 +186,61 @@ void tjvm::printInfo(const Class& javaClass) {
 			<< tjvm::getCPString(javaClass.m_constantPool, javaClass.m_interfaces[i], tjvm::ConstantPool::Tag::Class) << std::endl;
 }
 
-std::string tjvm::getCPString(const List<ConstantPool>& cp, u2 index, ConstantPool::Tag tag) {
+std::string tjvm::getCPString(const List<tjvm::ConstantPool>& cp, const u2 index, const tjvm::ConstantPool::Tag tag) {
 	const tjvm::ConstantPool& ref = cp[index - 1];
 	if (ref.m_tag != tag)
 		return "!! INCORRECT TAG !!";
 
 	switch (tag) {
-	case ConstantPool::Tag::Class:
-		return getCPString(cp, ref.m_class.name_index, ConstantPool::Tag::Utf8);
+	case tjvm::ConstantPool::Tag::Class:
+		return tjvm::getCPString(cp, ref.m_class.name_index, tjvm::ConstantPool::Tag::Utf8);
 
-	case ConstantPool::Tag::Fieldref:
+	case tjvm::ConstantPool::Tag::Fieldref:
 		return std::format("{} {}",
-			getCPString(cp, ref.m_fieldRef.class_index,			ConstantPool::Tag::Class),
-			getCPString(cp, ref.m_fieldRef.name_and_type_index,	ConstantPool::Tag::NameAndType));
-	case ConstantPool::Tag::Methodref:
+			tjvm::getCPString(cp, ref.m_fieldRef.class_index,			tjvm::ConstantPool::Tag::Class),
+			tjvm::getCPString(cp, ref.m_fieldRef.name_and_type_index,	tjvm::ConstantPool::Tag::NameAndType));
+	case tjvm::ConstantPool::Tag::Methodref:
 		return std::format("{} {}",
-			getCPString(cp, ref.m_methodRef.class_index,			ConstantPool::Tag::Class),
-			getCPString(cp, ref.m_methodRef.name_and_type_index,	ConstantPool::Tag::NameAndType));
-	case ConstantPool::Tag::InterfaceMethodref:
+			tjvm::getCPString(cp, ref.m_methodRef.class_index,			tjvm::ConstantPool::Tag::Class),
+			tjvm::getCPString(cp, ref.m_methodRef.name_and_type_index,	tjvm::ConstantPool::Tag::NameAndType));
+	case tjvm::ConstantPool::Tag::InterfaceMethodref:
 		return std::format("{} {}",
-			getCPString(cp, ref.m_interfaceMethodRef.class_index,			ConstantPool::Tag::Class),
-			getCPString(cp, ref.m_interfaceMethodRef.name_and_type_index,	ConstantPool::Tag::NameAndType));
+			tjvm::getCPString(cp, ref.m_interfaceMethodRef.class_index,			tjvm::ConstantPool::Tag::Class),
+			tjvm::getCPString(cp, ref.m_interfaceMethodRef.name_and_type_index,	tjvm::ConstantPool::Tag::NameAndType));
 
-	case ConstantPool::Tag::String:
-		return getCPString(cp, ref.m_string.string_index, ConstantPool::Tag::Utf8);
+	case tjvm::ConstantPool::Tag::String:
+		return tjvm::getCPString(cp, ref.m_string.string_index, tjvm::ConstantPool::Tag::Utf8);
 
-	case ConstantPool::Tag::Integer:
+	case tjvm::ConstantPool::Tag::Integer:
 		return std::format("{}", ref.m_integer.bytes);
-	case ConstantPool::Tag::Float:
+	case tjvm::ConstantPool::Tag::Float:
 		return std::format("{}", std::bit_cast<float>(ref.m_float.bytes));
 
-	case ConstantPool::Tag::Long:
+	case tjvm::ConstantPool::Tag::Long:
 		return std::format("{}", (u8) ref.m_long.high_bytes << 32 + ref.m_long.low_bytes);
-	case ConstantPool::Tag::Double:
+	case tjvm::ConstantPool::Tag::Double:
 		return std::format("{}", std::bit_cast<double>((u8) ref.m_double.high_bytes << 32 + ref.m_double.low_bytes));
 
-	case ConstantPool::Tag::NameAndType:
+	case tjvm::ConstantPool::Tag::NameAndType:
 		return std::format("{} {}",
-			getCPString(cp, ref.m_nameAndType.name_index,		ConstantPool::Tag::Utf8),
-			getCPString(cp, ref.m_nameAndType.descriptor_index,	ConstantPool::Tag::Utf8));
+			tjvm::getCPString(cp, ref.m_nameAndType.name_index,			tjvm::ConstantPool::Tag::Utf8),
+			tjvm::getCPString(cp, ref.m_nameAndType.descriptor_index,	tjvm::ConstantPool::Tag::Utf8));
 
-	case ConstantPool::Tag::Utf8:
-		return "utf8";
+	case tjvm::ConstantPool::Tag::Utf8:
+		return std::to_string(*ref.m_utf8.bytes);
 
-	case ConstantPool::Tag::MethodHandle:
+	case tjvm::ConstantPool::Tag::MethodHandle:
 		return std::format("{} {}",
 			"referenceType",
 			"dependend on referenceType");
 
-	case ConstantPool::Tag::MethodType:
-		return getCPString(cp, ref.m_nameAndType.descriptor_index, ConstantPool::Tag::Utf8);
+	case tjvm::ConstantPool::Tag::MethodType:
+		return tjvm::getCPString(cp, ref.m_nameAndType.descriptor_index, tjvm::ConstantPool::Tag::Utf8);
 
-	case ConstantPool::Tag::InvokeDynamic:
+	case tjvm::ConstantPool::Tag::InvokeDynamic:
 		return std::format("{} {}",
 			"bootstrapMethodAttribute",
-			getCPString(cp, ref.m_invokeDynamic.name_and_type_index, ConstantPool::Tag::NameAndType));
+			tjvm::getCPString(cp, ref.m_invokeDynamic.name_and_type_index, tjvm::ConstantPool::Tag::NameAndType));
 	default:
 		return "!! NO CONVERSION POSSIBLE !!";
 	}

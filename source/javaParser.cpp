@@ -8,6 +8,7 @@
 #include <type_traits>
 #include <bit>
 #include <format>
+#include <vector>
 
 template<typename T>
 T readBigEndian(std::ifstream& stream) {
@@ -128,62 +129,22 @@ template<>
 tjvm::ConstantPool::Utf8Info readBigEndian(std::ifstream& stream) {
 	tjvm::ConstantPool::Utf8Info info{};
 
-	info.bytes = new List<u1>(readBigEndian<u2>(stream));
-	u2 bytesWritten = 0;
+	u2 size = readBigEndian<u2>(stream);
+	std::vector<tjvm::Utf8> storage;
+	// always at most this size, if everything is single byte encoded
+	storage.reserve(size);
+	u2 bytesRead = 0;
 
-	while (bytesWritten < info.bytes->getSize()) {
-		u1 byte = readBigEndian<u1>(stream);
-
-		if (byte == 0)
-			throw std::format_error("utf8 byte cannot be 0");
-		if (byte >= 0xf0)
-			throw std::format_error("utf8 byte cannot be in the range 0xf0 - 0xff");
-
-		if (byte == 0b11101101) {								// utf16
-			u1 u = byte;
-			u1 v = readBigEndian<u1>(stream);
-			u1 w = readBigEndian<u1>(stream);
-			u1 x = readBigEndian<u1>(stream);
-			u1 y = readBigEndian<u1>(stream);
-			u1 z = readBigEndian<u1>(stream);
-
-			if ((v & (0b1010 << 4))	!= (0b1010 << 4))	throw std::format_error("utf16 byte[1] should start with '0b1010'");
-			if ((w & (0b10   << 6))	!= (0b10   << 6))	throw std::format_error("utf16 byte[2] should start with '0b10'");
-			if ( x					!=  0b11101101  )	throw std::format_error("utf16 byte[3] should be '0b11101101'");
-			if ((y & (0b1011 << 4))	!= (0b1011 << 4))	throw std::format_error("utf16 byte[4] should start with '0b1011'");
-			if ((z & (0b10   << 6))	!= (0b10   << 6))	throw std::format_error("utf16 byte[5] should start with '0b10'");
-
-			(*info.bytes)[bytesWritten++] = u;
-			(*info.bytes)[bytesWritten++] = v;
-			(*info.bytes)[bytesWritten++] = w;
-			(*info.bytes)[bytesWritten++] = x;
-			(*info.bytes)[bytesWritten++] = y;
-			(*info.bytes)[bytesWritten++] = z;
-		} else if ((byte & (0b1110 << 4)) == (0b1110 << 4)) {	// 0x0800 - 0xFFFF
-			u1 x = byte;
-			u1 y = readBigEndian<u1>(stream);
-			u1 z = readBigEndian<u1>(stream);
-
-			if ((y & (0b10 << 6)) != (0b10 << 6))	throw std::format_error("utf8 byte[1] should start with '0b10'");
-			if ((z & (0b10 << 6)) != (0b10 << 6))	throw std::format_error("utf8 byte[2] should start with '0b10'");
-
-			(*info.bytes)[bytesWritten++] = x;
-			(*info.bytes)[bytesWritten++] = y;
-			(*info.bytes)[bytesWritten++] = z;
-		} else if ((byte & (0b110 << 5)) == (0b110 << 5)) {		// 0x0080 - 0x07FF
-			u1 x = byte;
-			u1 y = readBigEndian<u1>(stream);
-
-			if ((y & (0b10 << 6)) != (0b10 << 6))	throw std::format_error("utf8 byte[1] should start with '0b10'");
-
-			(*info.bytes)[bytesWritten++] = x;
-			(*info.bytes)[bytesWritten++] = y;
-		} else if ((byte & (0b0 << 7)) == (0b0 << 7)) {			// 0x0001 - 0x007F
-			(*info.bytes)[bytesWritten++] = byte;
-		} else {
-			throw std::format_error(std::format("{} {}", "unknown utf8 byte", byte));
-		}
+	while (bytesRead < size) {
+		u8 data = readBigEndian<u8>(stream);
+		tjvm::Utf8& utf8 = storage.emplace_back(data);
+		stream.seekg(-sizeof(u8) + utf8.getCodePoints(), std::ios_base::cur);
+		bytesRead += utf8.getCodePoints();
 	}
+
+	info.bytes = new List<tjvm::Utf8>(storage.size());
+	for (u2 i = 0; i < info.bytes->getSize(); i++)
+		(*info.bytes)[i] = std::move(storage[i]);
 
 	return info;
 }
@@ -247,32 +208,29 @@ std::optional<tjvm::Class> tjvm::parseClass(std::ifstream& file) {
 	return std::move(java);
 }
 
-std::optional<List<tjvm::ConstantPool>> tjvm::parseConstantPool(std::ifstream& file, u2 size) {
-	using cp = tjvm::ConstantPool;
-	using tag = cp::Tag;
-
-	List<cp> list(size);
+std::optional<List<tjvm::ConstantPool>> tjvm::parseConstantPool(std::ifstream& file, const u2 size) {
+	List<tjvm::ConstantPool> list(size);
 	bool isValid = true;
 
 	for (u2 i = 0; i < size; i++) {
-		cp& ref = list[i];
-		ref.m_tag = readBigEndian<tag>(file);
+		tjvm::ConstantPool& ref = list[i];
+		ref.m_tag = readBigEndian<tjvm::ConstantPool::Tag>(file);
 		try {
 			switch (ref.m_tag) {
-			case tag::Class:				ref.m_class				= readBigEndian<cp::ClassInfo>(file);				break;
-			case tag::Fieldref:				ref.m_fieldRef			= readBigEndian<cp::FieldrefInfo>(file);			break;
-			case tag::Methodref:			ref.m_methodRef			= readBigEndian<cp::MethodrefInfo>(file);			break;
-			case tag::InterfaceMethodref:	ref.m_interfaceMethodRef= readBigEndian<cp::InterfaceMethodrefInfo>(file);	break;
-			case tag::String:				ref.m_string			= readBigEndian<cp::StringInfo>(file);				break;
-			case tag::Integer:				ref.m_integer			= readBigEndian<cp::IntegerInfo>(file);				break;
-			case tag::Float:				ref.m_float				= readBigEndian<cp::FloatInfo>(file);				break;
-			case tag::Long:					ref.m_long				= readBigEndian<cp::LongInfo>(file);				break;
-			case tag::Double:				ref.m_double			= readBigEndian<cp::DoubleInfo>(file);				break;
-			case tag::NameAndType:			ref.m_nameAndType		= readBigEndian<cp::NameAndTypeInfo>(file);			break;
-			case tag::Utf8:					ref.m_utf8				= readBigEndian<cp::Utf8Info>(file);				break;
-			case tag::MethodHandle:			ref.m_methodHandle		= readBigEndian<cp::MethodHandleInfo>(file);		break;
-			case tag::MethodType:			ref.m_methodType		= readBigEndian<cp::MethodTypeInfo>(file);			break;
-			case tag::InvokeDynamic:		ref.m_invokeDynamic		= readBigEndian<cp::InvokeDynamicInfo>(file);		break;
+			case tjvm::ConstantPool::Tag::Class:				ref.m_class				= readBigEndian<tjvm::ConstantPool::ClassInfo>(file);				break;
+			case tjvm::ConstantPool::Tag::Fieldref:				ref.m_fieldRef			= readBigEndian<tjvm::ConstantPool::FieldrefInfo>(file);			break;
+			case tjvm::ConstantPool::Tag::Methodref:			ref.m_methodRef			= readBigEndian<tjvm::ConstantPool::MethodrefInfo>(file);			break;
+			case tjvm::ConstantPool::Tag::InterfaceMethodref:	ref.m_interfaceMethodRef= readBigEndian<tjvm::ConstantPool::InterfaceMethodrefInfo>(file);	break;
+			case tjvm::ConstantPool::Tag::String:				ref.m_string			= readBigEndian<tjvm::ConstantPool::StringInfo>(file);				break;
+			case tjvm::ConstantPool::Tag::Integer:				ref.m_integer			= readBigEndian<tjvm::ConstantPool::IntegerInfo>(file);				break;
+			case tjvm::ConstantPool::Tag::Float:				ref.m_float				= readBigEndian<tjvm::ConstantPool::FloatInfo>(file);				break;
+			case tjvm::ConstantPool::Tag::Long:					ref.m_long				= readBigEndian<tjvm::ConstantPool::LongInfo>(file);				break;
+			case tjvm::ConstantPool::Tag::Double:				ref.m_double			= readBigEndian<tjvm::ConstantPool::DoubleInfo>(file);				break;
+			case tjvm::ConstantPool::Tag::NameAndType:			ref.m_nameAndType		= readBigEndian<tjvm::ConstantPool::NameAndTypeInfo>(file);			break;
+			case tjvm::ConstantPool::Tag::Utf8:					ref.m_utf8				= readBigEndian<tjvm::ConstantPool::Utf8Info>(file);				break;
+			case tjvm::ConstantPool::Tag::MethodHandle:			ref.m_methodHandle		= readBigEndian<tjvm::ConstantPool::MethodHandleInfo>(file);		break;
+			case tjvm::ConstantPool::Tag::MethodType:			ref.m_methodType		= readBigEndian<tjvm::ConstantPool::MethodTypeInfo>(file);			break;
+			case tjvm::ConstantPool::Tag::InvokeDynamic:		ref.m_invokeDynamic		= readBigEndian<tjvm::ConstantPool::InvokeDynamicInfo>(file);		break;
 			default:
 			{
 				std::cerr << "invalid ref tag, continuing parsing the rest of the file" << std::endl;
@@ -283,7 +241,7 @@ std::optional<List<tjvm::ConstantPool>> tjvm::parseConstantPool(std::ifstream& f
 		} catch (std::format_error err) {
 			std::cerr << err.what() << std::endl;
 			ref.m_utf8 = {};
-			ref.m_utf8.bytes = new List<u1>();
+			ref.m_utf8.bytes = new List<tjvm::Utf8>();
 			isValid = false;
 #ifdef _MSC_VER
 			__debugbreak();
