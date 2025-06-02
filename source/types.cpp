@@ -4,6 +4,8 @@
 #include <stdexcept>
 #include <bit>
 #include <sstream>
+#include <cstring>
+#include <format>
 
 //#define LOGGING
 
@@ -52,7 +54,7 @@ List<T>& List<T>::operator=(List<T>&& other) noexcept {
 
 		m_size = other.m_size;
 		m_data = other.m_data;
-		
+
 		other.m_size = 0;
 		other.m_data = nullptr;
 	}
@@ -92,7 +94,7 @@ tjvm::Utf8::Utf8(u8 data) {
 		u1 x = bytes[3];
 		u1 y = bytes[4];
 		u1 z = bytes[5];
-		
+
 		if ((u & (0b11101101 )) != (0b11101101 )) throw std::format_error("utf16 byte[1] should be '0b11101101'");
 		if ((v & (0b1010 << 4)) != (0b1010 << 4)) throw std::format_error("utf16 byte[1] should start with '0b1010'");
 		if ((w & (0b10   << 6)) != (0b10   << 6)) throw std::format_error("utf16 byte[2] should start with '0b10'");
@@ -264,7 +266,7 @@ std::string std::to_string(const tjvm::Utf8& utf8) {
 
 std::string std::to_string(const List<tjvm::Utf8>& utf8) {
 	std::ostringstream ss{};
-	
+
 	for (u2 i = 0; i < utf8.getSize(); i++)
 		ss << std::to_string(utf8[i]);
 
